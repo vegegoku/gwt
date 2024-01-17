@@ -15,6 +15,7 @@ on:
       - 'main'
       - 'release/*'
       - '*-test'
+      - 'java-17-support'
 jobs:
   build:
     runs-on: ubuntu-latest
