@@ -24,11 +24,18 @@ public class JInstanceOf extends JExpression {
 
   private JExpression expr;
   private JReferenceType testType;
+  private JStatement patternDeclarationStatement;
 
   public JInstanceOf(SourceInfo info, JReferenceType testType, JExpression expression) {
     super(info);
     this.testType = testType;
     this.expr = expression;
+  }
+  public JInstanceOf(SourceInfo info, JReferenceType testType, JExpression expression, JStatement patternDeclarationStatement) {
+    super(info);
+    this.testType = testType;
+    this.expr = expression;
+    this.patternDeclarationStatement = patternDeclarationStatement;
   }
 
   public JExpression getExpr() {
@@ -37,6 +44,10 @@ public class JInstanceOf extends JExpression {
 
   public JReferenceType getTestType() {
     return testType;
+  }
+
+  public JStatement getPatternDeclarationStatement() {
+    return patternDeclarationStatement;
   }
 
   @Override

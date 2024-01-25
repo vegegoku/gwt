@@ -51,12 +51,21 @@ public class Java17AstTest extends FullCompileTestBase {
     addAll(JavaResourceBase.createMockJavaResource("test.Square",
         "package test;",
         "public final class Square extends Shape {",
+        "public int getLength() {",
+        "return 10;",
+        "}",
+        "public double getSide() {",
+        "return 0;",
+        "}",
         "}"
     ));
 
     addAll(JavaResourceBase.createMockJavaResource("test.Circle",
         "package test;",
         "public final class Circle extends Shape {",
+        "public double getDiameter() {",
+        "return 0;",
+        "}",
         "}"
     ));
 
@@ -151,6 +160,53 @@ public class Java17AstTest extends FullCompileTestBase {
       }
       assertEquals("Switch expressions not yet supported", e.getMessage());
     }
+  }
+
+  public void testInstanceOfPatternMatching() throws UnableToCompleteException {
+    JProgram program = compileSnippet("void", "Shape shape1 = new Circle();" +
+        "if(shape1 instanceof Circle circle) {" +
+        "double diameter = circle.getDiameter();" +
+        "}"
+    );
+    System.out.println("break here");
+  }
+
+  public void testInstanceOfPatternMatchingWithAnd() throws UnableToCompleteException {
+    JProgram program = compileSnippet("void",
+        "Shape shape1 = new Circle();\n" +
+        "Shape shape2 = new Square();\n" +
+        "if(shape1 instanceof Circle circle && shape2 instanceof Square square) {\n" +
+        "double diameter = circle.getDiameter();\n" +
+        "}\n"
+    );
+    System.out.println("break here");
+  }
+
+  public void testInstanceOfPatternMatchingWithCondition() throws UnableToCompleteException {
+    JProgram program = compileSnippet("void",
+        "Shape shape2 = new Square();\n" +
+        "if(shape2 instanceof Square square && square.getLength() > 0) {\n" +
+        "double diameter = square.getSide();\n" +
+        "}\n"
+    );
+    System.out.println("break here");
+  }
+
+  public void testInstanceOfPatternMatchingWithAsNotCondition() throws UnableToCompleteException {
+    JProgram program = compileSnippet("void",
+        "Shape shape2 = new Square();\n" +
+        "if(!(shape2 instanceof Square square && square.getLength() > 0)) {\n" +
+        "}\n"
+    );
+    System.out.println("break here");
+  }
+  public void testInstanceOfPatternMatchingAsReturn() throws UnableToCompleteException {
+    JProgram program = compileSnippet("void",
+        "Shape shape2 = new Square();\n" +
+        "if(!(shape2 instanceof Square square && square.getLength() > 0)) {\n" +
+        "}\n"
+    );
+    System.out.println("break here");
   }
 
   @Override

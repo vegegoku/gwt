@@ -2,7 +2,7 @@
   <property name="gwt.root" location=".."/>
   <property name="project.tail" value="dev"/>
   <property name="test.args" value="-ea"/>
-  <property name="test.jvmargs" value="-ea"/>
+  <property name="test.jvmargs" value="-ea -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8005"/>
   <import file="${gwt.root}/platforms.ant.xml"/>
   <import file="${gwt.root}/common.ant.xml"/>
 

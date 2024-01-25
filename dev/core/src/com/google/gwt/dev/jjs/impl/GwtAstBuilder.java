@@ -15,6 +15,8 @@
  */
 package com.google.gwt.dev.jjs.impl;
 
+import static java.util.Objects.nonNull;
+
 import com.google.gwt.dev.CompilerContext;
 import com.google.gwt.dev.common.InliningMode;
 import com.google.gwt.dev.javac.JdtUtil;
@@ -93,7 +95,9 @@ import com.google.gwt.dev.jjs.ast.JTryStatement;
 import com.google.gwt.dev.jjs.ast.JType;
 import com.google.gwt.dev.jjs.ast.JUnaryOperator;
 import com.google.gwt.dev.jjs.ast.JUnsafeTypeCoercion;
+import com.google.gwt.dev.jjs.ast.JValueLiteral;
 import com.google.gwt.dev.jjs.ast.JVariable;
+import com.google.gwt.dev.jjs.ast.JVariableRef;
 import com.google.gwt.dev.jjs.ast.JWhileStatement;
 import com.google.gwt.dev.jjs.ast.js.JMultiExpression;
 import com.google.gwt.dev.jjs.ast.js.JsniClassLiteral;
@@ -1072,9 +1076,26 @@ public class GwtAstBuilder {
         JStatement elseStatement = pop(x.elseStatement);
         JStatement thenStatement = pop(x.thenStatement);
         JExpression condition = pop(x.condition);
+        addInstanceOfPatternMatchingDeclarationIfPresent(condition);
         push(new JIfStatement(info, condition, thenStatement, elseStatement));
       } catch (Throwable e) {
         throw translateException(x, e);
+      }
+    }
+
+    private void addInstanceOfPatternMatchingDeclarationIfPresent(JExpression expression) {
+      if(expression instanceof JInstanceOf){
+        JInstanceOf instanceOf = (JInstanceOf) expression;
+        if(nonNull(instanceOf.getPatternDeclarationStatement())){
+          push(instanceOf.getPatternDeclarationStatement());
+        }
+      }else if(expression instanceof JBinaryOperation) {
+        JBinaryOperation binaryOperation = (JBinaryOperation) expression;
+        addInstanceOfPatternMatchingDeclarationIfPresent(binaryOperation.getLhs());
+        addInstanceOfPatternMatchingDeclarationIfPresent(binaryOperation.getRhs());
+      }else if(expression instanceof JPrefixOperation){
+        JPrefixOperation jPrefixOperation = (JPrefixOperation) expression;
+        addInstanceOfPatternMatchingDeclarationIfPresent(jPrefixOperation.getArg());
       }
     }
 
@@ -1095,9 +1116,33 @@ public class GwtAstBuilder {
     public void endVisit(InstanceOfExpression x, BlockScope scope) {
       try {
         SourceInfo info = makeSourceInfo(x);
-        JExpression expr = pop(x.expression);
+        JExpression expr;
+        JDeclarationStatement jDeclarationStatement = null;
+        if(x.pattern != null){
+          jDeclarationStatement = (JDeclarationStatement) pop();
+        }
+        expr = pop(x.expression);
         JReferenceType testType = (JReferenceType) typeMap.get(x.type.resolvedType);
-        push(new JInstanceOf(info, testType, expr));
+
+        if(jDeclarationStatement == null) {
+          push(new JInstanceOf(info, testType, expr));
+        }else {
+          JVariableRef variableRef = jDeclarationStatement.getVariableRef();
+          JCastOperation jCastOperation = new JCastOperation(info, variableRef.getType(), expr);
+          JBinaryOperation assignOperation =
+              new JBinaryOperation(info, variableRef.getType(), JBinaryOperator.ASG, variableRef,
+                  jCastOperation);
+
+          JBinaryOperation refAssignExpr =
+              new JBinaryOperation(info, JPrimitiveType.BOOLEAN, JBinaryOperator.NEQ,
+                  JNullLiteral.INSTANCE, assignOperation);
+
+          JBinaryOperation rewrittenSwitch =
+              new JBinaryOperation(info, JPrimitiveType.BOOLEAN, JBinaryOperator.AND,
+                  new JInstanceOf(info, testType, expr, jDeclarationStatement), refAssignExpr);
+
+          push(rewrittenSwitch);
+        }
       } catch (Throwable e) {
         throw translateException(x, e);
       }
