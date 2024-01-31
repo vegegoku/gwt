@@ -128,6 +128,7 @@ import com.google.gwt.thirdparty.guava.common.collect.Maps;
 import com.google.gwt.thirdparty.guava.common.collect.Sets;
 import com.google.gwt.util.regexfilter.WhitelistRegexFilter;
 
+import java.util.function.Consumer;
 import org.eclipse.jdt.internal.compiler.ast.AND_AND_Expression;
 import org.eclipse.jdt.internal.compiler.ast.ASTNode;
 import org.eclipse.jdt.internal.compiler.ast.AbstractMethodDeclaration;
@@ -1075,26 +1076,26 @@ public class GwtAstBuilder {
         JStatement elseStatement = pop(x.elseStatement);
         JStatement thenStatement = pop(x.thenStatement);
         JExpression condition = pop(x.condition);
-        addInstanceOfPatternMatchingDeclarationIfPresent(condition);
+        addInstanceOfPatternMatchingDeclarationIfPresent(condition, jInstanceOf -> push(jInstanceOf.getPatternDeclarationStatement()));
         push(new JIfStatement(info, condition, thenStatement, elseStatement));
       } catch (Throwable e) {
         throw translateException(x, e);
       }
     }
 
-    private void addInstanceOfPatternMatchingDeclarationIfPresent(JExpression expression) {
+    private void addInstanceOfPatternMatchingDeclarationIfPresent(JExpression expression, Consumer<JInstanceOf> action) {
       if(expression instanceof JInstanceOf){
         JInstanceOf instanceOf = (JInstanceOf) expression;
         if(nonNull(instanceOf.getPatternDeclarationStatement())){
-          push(instanceOf.getPatternDeclarationStatement());
+          action.accept(instanceOf);
         }
       }else if(expression instanceof JBinaryOperation) {
         JBinaryOperation binaryOperation = (JBinaryOperation) expression;
-        addInstanceOfPatternMatchingDeclarationIfPresent(binaryOperation.getLhs());
-        addInstanceOfPatternMatchingDeclarationIfPresent(binaryOperation.getRhs());
+        addInstanceOfPatternMatchingDeclarationIfPresent(binaryOperation.getLhs(), action);
+        addInstanceOfPatternMatchingDeclarationIfPresent(binaryOperation.getRhs(), action);
       }else if(expression instanceof JPrefixOperation){
         JPrefixOperation jPrefixOperation = (JPrefixOperation) expression;
-        addInstanceOfPatternMatchingDeclarationIfPresent(jPrefixOperation.getArg());
+        addInstanceOfPatternMatchingDeclarationIfPresent(jPrefixOperation.getArg(), action);
       }
     }
 
@@ -1296,6 +1297,10 @@ public class GwtAstBuilder {
        *
        * And replaces the lambda with new lambda$0$Type([outer this], captured locals...).
        */
+
+      if(x.toString().contains("shape")){
+        System.out.println("break here");
+      }
 
       // The target accepting this lambda is looking for which type? (e.g. ClickHandler, Runnable)
       TypeBinding binding = x.expectedType();
@@ -2136,6 +2141,7 @@ public class GwtAstBuilder {
       try {
         SourceInfo info = makeSourceInfo(x);
         JExpression expression = pop(x.expression);
+        addInstanceOfPatternMatchingDeclarationIfPresent(expression, jInstanceOf -> curMethod.body.getBlock().addStmt(jInstanceOf.getPatternDeclarationStatement()));
         push(new JReturnStatement(info, expression));
       } catch (Throwable e) {
         throw translateException(x, e);
