@@ -16,16 +16,10 @@
 package com.google.gwt.dev.jjs.test;
 
 import com.google.gwt.core.client.GwtScriptOnly;
-import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.dev.jjs.ast.JAbstractMethodBody;
-import com.google.gwt.dev.jjs.ast.JDeclaredType;
-import com.google.gwt.dev.jjs.ast.JProgram;
-import com.google.gwt.dev.jjs.ast.JType;
 import com.google.gwt.junit.client.GWTTestCase;
 
 import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Tests Java 17 features. It is super sourced so that gwt can be compiles under Java 11.

@@ -19,14 +19,12 @@ import com.google.gwt.dev.jjs.InternalCompilerException;
 import com.google.gwt.dev.jjs.ast.JAbstractMethodBody;
 import com.google.gwt.dev.jjs.ast.JDeclaredType;
 import com.google.gwt.dev.jjs.ast.JInterfaceType;
-import com.google.gwt.dev.jjs.ast.JMethodBody;
 import com.google.gwt.dev.jjs.ast.JProgram;
 import com.google.gwt.dev.jjs.ast.JStringLiteral;
 import com.google.gwt.dev.jjs.ast.JType;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-
 
 /**
  * Tests that {@link GwtAstBuilder} correctly builds the AST for
@@ -162,7 +160,17 @@ public class Java17AstTest extends FullCompileTestBase {
         "double diameter = circle.getDiameter();" +
         "}"
     );
-    System.out.println("break here");
+
+    JAbstractMethodBody onModuleLoadMethod = findMethod(program, "onModuleLoad")
+        .getBody();
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("Circle circle;"));
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("shape1 instanceof Circle && null != (circle = (Circle) shape1)"));
   }
 
   public void testInstanceOfPatternMatchingWithAnd() throws UnableToCompleteException {
@@ -173,7 +181,25 @@ public class Java17AstTest extends FullCompileTestBase {
         "double diameter = circle.getDiameter();\n" +
         "}\n"
     );
-    System.out.println("break here");
+
+    JAbstractMethodBody onModuleLoadMethod = findMethod(program, "onModuleLoad")
+        .getBody();
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("Circle circle;"));
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("Square square;"));
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("shape1 instanceof Circle && null != (circle = (Circle) shape1)"));
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("shape2 instanceof Square && null != (square = (Square) shape2)"));
   }
 
   public void testInstanceOfPatternMatchingWithCondition() throws UnableToCompleteException {
@@ -220,7 +246,7 @@ public class Java17AstTest extends FullCompileTestBase {
         "Shape shape1 = new Square();\n" +
         "Shape shape2 = new Square();\n" +
         "if(shape1 instanceof Square square && square.getLength() > 0) {\n" +
-        "}\n"+
+        "}\n" +
         "if(shape2 instanceof Square square && square.getLength() > 0) {\n" +
         "}\n"
     );
@@ -241,13 +267,13 @@ public class Java17AstTest extends FullCompileTestBase {
 
   public void testInstanceOfPatternMatchingInLambda() throws UnableToCompleteException {
     addSnippetClassDecl("public class Foo {\n" +
-        "private Shape shape;\n"+
-        "public Foo(){\n"+
-        "shape = new Square();\n"+
-        "}\n"+
-        "public TestSupplier isSquare(){\n"+
-        "return () -> shape instanceof Square square && square.getLength() > 0;\n"+
-        "}\n"+
+        "private Shape shape;\n" +
+        "public Foo(){\n" +
+        "shape = new Square();\n" +
+        "}\n" +
+        "public TestSupplier isSquare(){\n" +
+        "return () -> shape instanceof Square square && square.getLength() > 0;\n" +
+        "}\n" +
         "}");
 
     JProgram program = compileSnippet("void", "Foo foo = new Foo();");
@@ -267,13 +293,13 @@ public class Java17AstTest extends FullCompileTestBase {
   public void testInstanceOfPatternMatchingAsReturn() throws UnableToCompleteException {
 
     addSnippetClassDecl("public class Foo {\n" +
-        "private Shape shape;\n"+
-        "public Foo(){\n"+
-        "shape = new Square();\n"+
-        "}\n"+
-        "public boolean isSquare(){\n"+
-        "return shape instanceof Square square && square.getLength() > 0;\n"+
-        "}\n"+
+        "private Shape shape;\n" +
+        "public Foo(){\n" +
+        "shape = new Square();\n" +
+        "}\n" +
+        "public boolean isSquare(){\n" +
+        "return shape instanceof Square square && square.getLength() > 0;\n" +
+        "}\n" +
         "}");
     JProgram program = compileSnippet("void", "Foo foo = new Foo();");
     JType foo = findType(program, "test.EntryPoint.Foo");

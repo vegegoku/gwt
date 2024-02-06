@@ -15,8 +15,6 @@
  */
 package com.google.gwt.dev.jjs.impl;
 
-import static java.util.Objects.nonNull;
-
 import com.google.gwt.dev.CompilerContext;
 import com.google.gwt.dev.common.InliningMode;
 import com.google.gwt.dev.javac.JdtUtil;
@@ -128,7 +126,6 @@ import com.google.gwt.thirdparty.guava.common.collect.Maps;
 import com.google.gwt.thirdparty.guava.common.collect.Sets;
 import com.google.gwt.util.regexfilter.WhitelistRegexFilter;
 
-import java.util.function.Consumer;
 import org.eclipse.jdt.internal.compiler.ast.AND_AND_Expression;
 import org.eclipse.jdt.internal.compiler.ast.ASTNode;
 import org.eclipse.jdt.internal.compiler.ast.AbstractMethodDeclaration;
@@ -1076,26 +1073,9 @@ public class GwtAstBuilder {
         JStatement elseStatement = pop(x.elseStatement);
         JStatement thenStatement = pop(x.thenStatement);
         JExpression condition = pop(x.condition);
-        addInstanceOfPatternMatchingDeclarationIfPresent(condition, jInstanceOf -> push(jInstanceOf.getPatternDeclarationStatement()));
         push(new JIfStatement(info, condition, thenStatement, elseStatement));
       } catch (Throwable e) {
         throw translateException(x, e);
-      }
-    }
-
-    private void addInstanceOfPatternMatchingDeclarationIfPresent(JExpression expression, Consumer<JInstanceOf> action) {
-      if(expression instanceof JInstanceOf){
-        JInstanceOf instanceOf = (JInstanceOf) expression;
-        if(nonNull(instanceOf.getPatternDeclarationStatement())){
-          action.accept(instanceOf);
-        }
-      }else if(expression instanceof JBinaryOperation) {
-        JBinaryOperation binaryOperation = (JBinaryOperation) expression;
-        addInstanceOfPatternMatchingDeclarationIfPresent(binaryOperation.getLhs(), action);
-        addInstanceOfPatternMatchingDeclarationIfPresent(binaryOperation.getRhs(), action);
-      }else if(expression instanceof JPrefixOperation){
-        JPrefixOperation jPrefixOperation = (JPrefixOperation) expression;
-        addInstanceOfPatternMatchingDeclarationIfPresent(jPrefixOperation.getArg(), action);
       }
     }
 
@@ -1118,24 +1098,26 @@ public class GwtAstBuilder {
         SourceInfo info = makeSourceInfo(x);
         JExpression expr;
         JDeclarationStatement jDeclarationStatement = null;
-        if(x.pattern != null){
+        if (x.pattern != null) {
           jDeclarationStatement = (JDeclarationStatement) pop();
         }
         expr = pop(x.expression);
         JReferenceType testType = (JReferenceType) typeMap.get(x.type.resolvedType);
 
-        if(jDeclarationStatement == null) {
+        if (jDeclarationStatement == null) {
           push(new JInstanceOf(info, testType, expr));
-        }else {
+        } else {
           String localVariableName = jDeclarationStatement.getVariableRef().getTarget().getName();
-          if(!curMethod.instanceOfDeclarations.containsKey(localVariableName)) {
+          if (!curMethod.instanceOfDeclarations.containsKey(localVariableName)) {
             curMethod.body.getBlock().addStmt(0, jDeclarationStatement);
             curMethod.instanceOfDeclarations.put(localVariableName, jDeclarationStatement);
           }
-          //rewrite (o instanceof Foo foo)
+
+          // rewrite (o instanceof Foo foo)
           // to
           // Foo foo;
           // (o instanceof Foo && null != (foo = (Foo)foo))
+
           JVariableRef variableRef = jDeclarationStatement.getVariableRef();
           JCastOperation jCastOperation = new JCastOperation(info, variableRef.getType(), expr);
           JBinaryOperation assignOperation =
@@ -1297,10 +1279,6 @@ public class GwtAstBuilder {
        *
        * And replaces the lambda with new lambda$0$Type([outer this], captured locals...).
        */
-
-      if(x.toString().contains("shape")){
-        System.out.println("break here");
-      }
 
       // The target accepting this lambda is looking for which type? (e.g. ClickHandler, Runnable)
       TypeBinding binding = x.expectedType();
@@ -2141,7 +2119,6 @@ public class GwtAstBuilder {
       try {
         SourceInfo info = makeSourceInfo(x);
         JExpression expression = pop(x.expression);
-        addInstanceOfPatternMatchingDeclarationIfPresent(expression, jInstanceOf -> curMethod.body.getBlock().addStmt(jInstanceOf.getPatternDeclarationStatement()));
         push(new JReturnStatement(info, expression));
       } catch (Throwable e) {
         throw translateException(x, e);
@@ -3906,6 +3883,7 @@ public class GwtAstBuilder {
     public final Map<LocalVariableBinding, JVariable> locals = Maps.newIdentityHashMap();
     public final JMethod method;
     public final MethodScope scope;
+    public final Map<String, JStatement> instanceOfDeclarations = Maps.newHashMap();
 
     public MethodInfo(JMethod method, JMethodBody methodBody, MethodScope methodScope) {
       this.method = method;

@@ -16,7 +16,6 @@
 package com.google.gwt.dev.jjs.ast;
 
 import com.google.gwt.dev.jjs.SourceInfo;
-import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
 
 /**
  * Java instance of expression.
