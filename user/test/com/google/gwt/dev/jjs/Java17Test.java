@@ -15,11 +15,17 @@
  */
 package com.google.gwt.dev.jjs;
 
+import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.dev.jjs.ast.JAbstractMethodBody;
+import com.google.gwt.dev.jjs.ast.JDeclaredType;
+import com.google.gwt.dev.jjs.ast.JProgram;
+import com.google.gwt.dev.jjs.ast.JType;
 import com.google.gwt.dev.util.arg.SourceLevel;
 import com.google.gwt.junit.DoNotRunWith;
 import com.google.gwt.junit.JUnitShell;
 import com.google.gwt.junit.Platform;
 import com.google.gwt.junit.client.GWTTestCase;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Dummy test case. Java17Test is super sourced so that GWT can be compiled by Java 8.
@@ -47,6 +53,34 @@ public class Java17Test extends GWTTestCase {
   }
 
   public void testSealedClassesPermitted() {
+    assertFalse(isGwtSourceLevel17());
+  }
+
+  public void testInstanceOfPatternMatching() {
+    assertFalse(isGwtSourceLevel17());
+  }
+
+  public void testInstanceOfPatternMatchingWithAnd() {
+    assertFalse(isGwtSourceLevel17());
+  }
+
+  public void testInstanceOfPatternMatchingWithCondition() {
+    assertFalse(isGwtSourceLevel17());
+  }
+
+  public void testInstanceOfPatternMatchingWithAsNotCondition() {
+    assertFalse(isGwtSourceLevel17());
+  }
+
+  public void testMultipleInstanceOfPatternMatchingWithSameVariableName() {
+    assertFalse(isGwtSourceLevel17());
+  }
+
+  public void testInstanceOfPatternMatchingInLambda() {
+    assertFalse(isGwtSourceLevel17());
+  }
+
+  public void testInstanceOfPatternMatchingAsReturn() {
     assertFalse(isGwtSourceLevel17());
   }
 

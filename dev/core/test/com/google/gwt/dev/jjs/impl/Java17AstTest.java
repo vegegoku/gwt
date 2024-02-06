@@ -16,11 +16,16 @@ package com.google.gwt.dev.jjs.impl;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.javac.testing.impl.JavaResourceBase;
 import com.google.gwt.dev.jjs.InternalCompilerException;
+import com.google.gwt.dev.jjs.ast.JAbstractMethodBody;
+import com.google.gwt.dev.jjs.ast.JDeclaredType;
 import com.google.gwt.dev.jjs.ast.JInterfaceType;
+import com.google.gwt.dev.jjs.ast.JMethodBody;
 import com.google.gwt.dev.jjs.ast.JProgram;
 import com.google.gwt.dev.jjs.ast.JStringLiteral;
+import com.google.gwt.dev.jjs.ast.JType;
 import java.util.Arrays;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Tests that {@link GwtAstBuilder} correctly builds the AST for
@@ -73,6 +78,13 @@ public class Java17AstTest extends FullCompileTestBase {
         "package test;",
         "public enum Months {",
         "JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE, JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER;",
+        "}"
+    ));
+
+    addAll(JavaResourceBase.createMockJavaResource("test.TestSupplier",
+        "package test;",
+        "public interface TestSupplier {",
+        "  boolean run();",
         "}"
     ));
   }
@@ -168,7 +180,17 @@ public class Java17AstTest extends FullCompileTestBase {
         "double diameter = circle.getDiameter();" +
         "}"
     );
-    System.out.println("break here");
+
+    JAbstractMethodBody onModuleLoadMethod = findMethod(program, "onModuleLoad")
+        .getBody();
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("Circle circle;"));
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("shape1 instanceof Circle && null != (circle = (Circle) shape1)"));
   }
 
   public void testInstanceOfPatternMatchingWithAnd() throws UnableToCompleteException {
@@ -179,7 +201,25 @@ public class Java17AstTest extends FullCompileTestBase {
         "double diameter = circle.getDiameter();\n" +
         "}\n"
     );
-    System.out.println("break here");
+
+    JAbstractMethodBody onModuleLoadMethod = findMethod(program, "onModuleLoad")
+        .getBody();
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("Circle circle;"));
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("Square square;"));
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("shape1 instanceof Circle && null != (circle = (Circle) shape1)"));
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("shape2 instanceof Square && null != (square = (Square) shape2)"));
   }
 
   public void testInstanceOfPatternMatchingWithCondition() throws UnableToCompleteException {
@@ -189,24 +229,110 @@ public class Java17AstTest extends FullCompileTestBase {
         "double diameter = square.getSide();\n" +
         "}\n"
     );
-    System.out.println("break here");
+
+    JAbstractMethodBody onModuleLoadMethod = findMethod(program, "onModuleLoad")
+        .getBody();
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("Square square;"));
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("shape2 instanceof Square && null != (square = (Square) shape2)"));
   }
 
   public void testInstanceOfPatternMatchingWithAsNotCondition() throws UnableToCompleteException {
     JProgram program = compileSnippet("void",
-        "Shape shape2 = new Square();\n" +
-        "if(!(shape2 instanceof Square square && square.getLength() > 0)) {\n" +
+        "Shape shape1 = new Square();\n" +
+        "if(!(shape1 instanceof Square square && square.getLength() > 0)) {\n" +
         "}\n"
     );
-    System.out.println("break here");
+
+    JAbstractMethodBody onModuleLoadMethod = findMethod(program, "onModuleLoad")
+        .getBody();
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("Square square;"));
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("shape1 instanceof Square && null != (square = (Square) shape1)"));
   }
-  public void testInstanceOfPatternMatchingAsReturn() throws UnableToCompleteException {
+
+  public void testMultipleInstanceOfPatternMatchingWithSameVariableName() throws UnableToCompleteException {
     JProgram program = compileSnippet("void",
+        "Shape shape1 = new Square();\n" +
         "Shape shape2 = new Square();\n" +
-        "if(!(shape2 instanceof Square square && square.getLength() > 0)) {\n" +
+        "if(shape1 instanceof Square square && square.getLength() > 0) {\n" +
+        "}\n"+
+        "if(shape2 instanceof Square square && square.getLength() > 0) {\n" +
         "}\n"
     );
-    System.out.println("break here");
+
+    JAbstractMethodBody onModuleLoadMethod = findMethod(program, "onModuleLoad")
+        .getBody();
+
+    assertEquals(1, StringUtils.countMatches(onModuleLoadMethod.toSource(), "Square square;"));
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("shape1 instanceof Square && null != (square = (Square) shape1)"));
+
+    assertTrue(onModuleLoadMethod
+        .toSource()
+        .contains("shape2 instanceof Square && null != (square = (Square) shape2)"));
+  }
+
+  public void testInstanceOfPatternMatchingInLambda() throws UnableToCompleteException {
+    addSnippetClassDecl("public class Foo {\n" +
+        "private Shape shape;\n"+
+        "public Foo(){\n"+
+        "shape = new Square();\n"+
+        "}\n"+
+        "public TestSupplier isSquare(){\n"+
+        "return () -> shape instanceof Square square && square.getLength() > 0;\n"+
+        "}\n"+
+        "}");
+
+    JProgram program = compileSnippet("void", "Foo foo = new Foo();");
+    JType foo = findType(program, "test.EntryPoint.Foo");
+    JAbstractMethodBody lambda = findMethod((JDeclaredType) foo, "lambda$0")
+        .getBody();
+
+    assertTrue(lambda
+        .toSource()
+        .contains("Square square;"));
+
+    assertTrue(lambda
+        .toSource()
+        .contains("this.shape instanceof Square && null != (square = (Square) this.shape)"));
+  }
+
+  public void testInstanceOfPatternMatchingAsReturn() throws UnableToCompleteException {
+
+    addSnippetClassDecl("public class Foo {\n" +
+        "private Shape shape;\n"+
+        "public Foo(){\n"+
+        "shape = new Square();\n"+
+        "}\n"+
+        "public boolean isSquare(){\n"+
+        "return shape instanceof Square square && square.getLength() > 0;\n"+
+        "}\n"+
+        "}");
+    JProgram program = compileSnippet("void", "Foo foo = new Foo();");
+    JType foo = findType(program, "test.EntryPoint.Foo");
+    JAbstractMethodBody isSquare = findMethod((JDeclaredType) foo, "isSquare")
+        .getBody();
+
+    assertTrue(isSquare
+        .toSource()
+        .contains("Square square;"));
+
+    assertTrue(isSquare
+        .toSource()
+        .contains("this.shape instanceof Square && null != (square = (Square) this.shape)"));
   }
 
   @Override

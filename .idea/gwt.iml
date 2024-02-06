@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="CheckStyle-IDEA-Module" serialisationVersion="2">
+    <option name="activeLocationsIds" />
+  </component>
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/dev/core/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/user/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/dev/core/super" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/dev/core/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/samples/hello/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/user/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/user/test-super/com/google/gwt/dev/jjs/super/com" isTestSource="true" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="guava-19.0-rebased" level="project" />
+    <orderEntry type="library" name="cglib-3.1" level="project" />
+    <orderEntry type="library" name="jdtCompilerAdapter_3.36.0.v20231115-1055" level="project" />
+    <orderEntry type="library" name="asm-9.6.0" level="project" />
+    <orderEntry type="library" name="junit-4.8.2" level="project" />
+    <orderEntry type="library" name="validation-api-1.0.0.GA" level="project" />
+    <orderEntry type="library" name="colt-1.2" level="project" />
+    <orderEntry type="library" name="ant-zipscanner-1.6.5-1-rebased" level="project" />
+    <orderEntry type="library" name="sourcemap-rebased" level="project" />
+    <orderEntry type="library" name="sourcemap" level="project" />
+    <orderEntry type="library" name="json-android-rebased" level="project" />
+    <orderEntry type="library" name="jdtCompilerAdapter_3.32.0.v20221108-1853" level="project" />
+    <orderEntry type="library" name="asm-source-9.6" level="project" />
+    <orderEntry type="library" name="selenium-java-client-driver-sources" level="project" />
+  </component>
+</module>

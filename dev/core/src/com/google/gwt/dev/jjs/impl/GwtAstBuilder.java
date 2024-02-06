@@ -95,7 +95,6 @@ import com.google.gwt.dev.jjs.ast.JTryStatement;
 import com.google.gwt.dev.jjs.ast.JType;
 import com.google.gwt.dev.jjs.ast.JUnaryOperator;
 import com.google.gwt.dev.jjs.ast.JUnsafeTypeCoercion;
-import com.google.gwt.dev.jjs.ast.JValueLiteral;
 import com.google.gwt.dev.jjs.ast.JVariable;
 import com.google.gwt.dev.jjs.ast.JVariableRef;
 import com.google.gwt.dev.jjs.ast.JWhileStatement;
@@ -1127,6 +1126,15 @@ public class GwtAstBuilder {
         if(jDeclarationStatement == null) {
           push(new JInstanceOf(info, testType, expr));
         }else {
+          String localVariableName = jDeclarationStatement.getVariableRef().getTarget().getName();
+          if(!curMethod.instanceOfDeclarations.containsKey(localVariableName)) {
+            curMethod.body.getBlock().addStmt(0, jDeclarationStatement);
+            curMethod.instanceOfDeclarations.put(localVariableName, jDeclarationStatement);
+          }
+          //rewrite (o instanceof Foo foo)
+          // to
+          // Foo foo;
+          // (o instanceof Foo && null != (foo = (Foo)foo))
           JVariableRef variableRef = jDeclarationStatement.getVariableRef();
           JCastOperation jCastOperation = new JCastOperation(info, variableRef.getType(), expr);
           JBinaryOperation assignOperation =
@@ -1139,7 +1147,7 @@ public class GwtAstBuilder {
 
           JBinaryOperation rewrittenSwitch =
               new JBinaryOperation(info, JPrimitiveType.BOOLEAN, JBinaryOperator.AND,
-                  new JInstanceOf(info, testType, expr, jDeclarationStatement), refAssignExpr);
+                  new JInstanceOf(info, testType, expr), refAssignExpr);
 
           push(rewrittenSwitch);
         }
